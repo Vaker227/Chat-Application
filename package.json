@@ -1,0 +1,46 @@
+{
+  "name": "ChatApplication",
+  "version": "1.0.0",
+  "main": "main.js",
+  "author": "LinkDo",
+  "license": "MIT",
+  "build": {
+    "appId": "your.id",
+    "mac": {
+      "category": "your.app.category.type"
+    }
+  },
+  "scripts": {
+    "electron": "electron . --inspect",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "watch": "yarn start && webpack --watch",
+    "start": "gulp"
+  },
+  "dependencies": {
+    "@popperjs/core": "^2.9.3",
+    "axios": "^0.21.1",
+    "bootstrap": "^5.1.0",
+    "electron-reload": "^2.0.0-alpha.1",
+    "react": "^17.0.2",
+    "react-bootstrap": "^2.0.1",
+    "react-dom": "^17.0.2",
+    "react-redux": "^7.2.4",
+    "redux": "^4.1.1",
+    "socket.io-client": "^4.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.15.0",
+    "@babel/polyfill": "^7.12.1",
+    "@babel/preset-env": "^7.15.0",
+    "@babel/preset-react": "^7.14.5",
+    "babel-loader": "^8.2.2",
+    "css-loader": "^6.2.0",
+    "electron": "^13.2.2",
+    "electron-builder": "^22.11.7",
+    "gulp": "^4.0.2",
+    "style-loader": "^3.2.1",
+    "webpack": "^5.51.1",
+    "webpack-cli": "^4.9.1"
+  }
+}
