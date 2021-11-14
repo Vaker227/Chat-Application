@@ -42,3 +42,8 @@ module.exports.notiMessage = (message) => {
 module.exports.collectGarbage = () => {
   URL.revokeObjectURL(URL.createObjectURL(new Blob([1])));
 };
+
+module.exports.getURL = () => {
+  return "http://localhost:3000";
+};
+

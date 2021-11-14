@@ -9,10 +9,10 @@ function OverView() {
   return (
     <div>
       <SideBar />
-      <Container id="main-layout">
+      <Container fluid id="main-layout">
         <Row className="h-100">
-          <Col md={5} as={Menu} className="bg-light h-100" />
-          <Col md={7} as={Content} />
+          <Col md={5} as={Menu} className="bg-light h-100 pt-2 border-end" />
+          <Col md={7} as={Content} className="h-100" />
         </Row>
       </Container>
     </div>

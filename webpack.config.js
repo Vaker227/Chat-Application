@@ -9,7 +9,7 @@ module.exports = {
     home: {
       import: ["@babel/polyfill", "./src/modules/home/home.jsx"],
     },
-    // login: "./src/modules/login/login.index.jsx",
+    login: ["@babel/polyfill", "./src/modules/login/login.jsx"],
   },
   output: {
     filename: "[name].js",

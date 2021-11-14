@@ -5,7 +5,7 @@ import Message from "./message.jsx";
 
 function MessagesList() {
   return (
-    <div id="message-list" className="mt-3">
+    <div id="message-list" className="mt-3 border-top">
       <div>
         <Message unread />
         <Message active/>

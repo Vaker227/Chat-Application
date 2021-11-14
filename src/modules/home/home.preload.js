@@ -4,4 +4,9 @@ contextBridge.exposeInMainWorld("electron", {
   quitApp: () => {
     ipcRenderer.send("quit-app");
   },
+  getCookies: (arg) => {
+    ipcRenderer.invoke("get-cookies", arg).then((cookies) => {
+      console.log(cookies);
+    });
+  },
 });
