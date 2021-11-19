@@ -1,12 +1,28 @@
-import React from "react";
+import React, { useMemo } from "react";
 
 import Avatar from "../common/avatar.jsx";
+import helper from "../../../helper";
+import _ from "lodash";
+import { connect } from "react-redux";
 
 function Message(props) {
+  const title = useMemo(() => {
+    return props.channel.type == "private"
+      ? helper.getPrivateChannelName(props.channel.participants)
+      : props.channel.title;
+  }, [props.channel, props.friends]);
+  const isActive = useMemo(() => {
+    return props.view.content == props.channel._id;
+  }, [props.view.content]);
   return (
     <div
-      className={`d-flex p-2 bg-light message ${props.active ? "active" : ""}`}
-      lasttime="5s"
+      className={`d-flex p-2 bg-light message ${isActive ? "active" : ""}`}
+      lasttime={`${
+        props.channel.messages[0]
+          ? helper.getTime(props.channel.messages[0].time)
+          : ""
+      }`}
+      onClick={props.onClick}
     >
       <div className="w-10">
         <Avatar
@@ -17,16 +33,19 @@ function Message(props) {
         />
       </div>
       <div>
-        <p
-          className={`title fs-5 ${props.unread ? "fw-bold" : ""}`}
-          lastime="5s"
-        >
-          Zulu
+        <p className={`title fs-5 ${props.unread ? "fw-bold" : ""}`}>{title}</p>
+        <p className={`${props.unread ? "fw-bold" : ""}`}>
+          {_.get(props, "channel.messages[0].content")}
         </p>
-        <p className={`${props.unread ? "fw-bold" : ""}`}>Hello</p>
       </div>
     </div>
   );
 }
 
-export default Message;
+const MessageSTP = (state) => {
+  return { view: state.view, friends: state.user.friends };
+};
+
+const MessageReduxed = connect(MessageSTP)(Message);
+
+export default MessageReduxed;

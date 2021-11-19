@@ -2,22 +2,24 @@ import React, { useState } from "react";
 import { Badge, Button } from "react-bootstrap";
 
 import SearchModal from "./search-modal.jsx";
+import CreateGroupModal from "./create-group-modal.jsx";
+import { connect } from "react-redux";
 
-function Search() {
+function Search(props) {
   const [isSearching, setIsSearching] = useState(false);
-  const [showSearchModal, setShowSearchModal] = useState(false);
+  const [showCreateGroupModal, setShowCreateGroupModal] = useState(false);
   const handleFocus = () => {
     setIsSearching(true);
   };
   const handleBlur = () => {
     setIsSearching(false);
   };
-  const handleSearchModalShow = (e) => {
+  const handleCreateGroupModalShow = (e) => {
     if (e) {
-      setShowSearchModal(true);
+      setShowCreateGroupModal(true);
       return;
     }
-    setShowSearchModal(false);
+    setShowCreateGroupModal(false);
   };
   return (
     <div className="w-100 py-3 bg-light">
@@ -37,18 +39,38 @@ function Search() {
         <>
           <i
             className="fas fa-user-plus text-btn"
-            onClick={handleSearchModalShow}
+            onClick={() => props.toggleSearchModal(true)}
             title="Thêm bạn"
           ></i>
-          <i className="fas fa-users text-btn" title="Tạo nhóm"></i>
+          <i
+            className="fas fa-users text-btn"
+            onClick={handleCreateGroupModalShow}
+            title="Tạo nhóm"
+          ></i>
         </>
       )}
       <SearchModal
-        isShow={showSearchModal}
-        turnOff={() => handleSearchModalShow()}
+        isShow={props.view.searchModal}
+        turnOff={() => props.toggleSearchModal(false)}
+      />
+      <CreateGroupModal
+        isShow={showCreateGroupModal}
+        turnOff={() => handleCreateGroupModalShow()}
       />
     </div>
   );
 }
 
-export default Search;
+const SearchSTP = (state) => {
+  return { view: state.view };
+};
+const SearchDTP = (dispatch) => {
+  return {
+    toggleSearchModal: function (value) {
+      return dispatch({ type: "TOGGLE_SEARCH_MODAL", data: value });
+    },
+  };
+};
+const SearchReduxed = connect(SearchSTP, SearchDTP)(Search);
+
+export default SearchReduxed;

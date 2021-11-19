@@ -43,9 +43,9 @@ app.whenReady().then(() => {
   login = require("./src/modules/login/login")();
 
   // main = require("./src/modules/home/home")();
-  // session.defaultSession
-  //   .loadExtension(reduxDevToolsPath, { allowFileAccess: true })
-  //   .then((data) => console.log("loaded: " + data.name));
+  session.defaultSession
+    .loadExtension(reduxDevToolsPath, { allowFileAccess: true })
+    .then((data) => console.log("loaded: " + data.name));
 });
 
 app.once("window-all-closed", () => {

@@ -23,6 +23,7 @@
     "bootstrap": "^5.1.0",
     "dotenv": "^10.0.0",
     "electron-reload": "^2.0.0-alpha.1",
+    "moment": "^2.29.1",
     "react": "^17.0.2",
     "react-bootstrap": "^2.0.1",
     "react-dom": "^17.0.2",
@@ -40,6 +41,7 @@
     "electron": "^13.2.2",
     "electron-builder": "^22.11.7",
     "gulp": "^4.0.2",
+    "lodash": "^4.17.21",
     "style-loader": "^3.2.1",
     "webpack": "^5.51.1",
     "webpack-cli": "^4.9.1"

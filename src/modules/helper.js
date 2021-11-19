@@ -1,5 +1,12 @@
-const getTime = () => {
-  const now = new Date();
+const store = require("./redux/store");
+
+const getTime = (date) => {
+  let now;
+  if (date) {
+    now = new Date(date);
+  } else {
+    now = new Date();
+  }
   const hours = now.getHours();
   const minutes = now.getMinutes();
   return `${hours}:${minutes < 10 ? "0" + minutes : minutes}`;
@@ -7,11 +14,15 @@ const getTime = () => {
 module.exports.getTime = getTime;
 
 const getTimeFrom = (dateObj) => {
-  const hours = dateObj.getHours();
-  const minutes = dateObj.getMinutes();
-  const date = dateObj.getDate();
-  const month = dateObj.getMonth();
-  const year = dateObj.getFullYear();
+  if (!dateObj) {
+    return "";
+  }
+  const vDate = new Date(dateObj);
+  const hours = vDate.getHours();
+  const minutes = vDate.getMinutes();
+  const date = vDate.getDate();
+  const month = vDate.getMonth();
+  const year = vDate.getFullYear();
   return `${hours}:${minutes < 10 ? "0" + minutes : minutes} ${date}/${
     month + 1
   }/${year}`;
@@ -39,11 +50,28 @@ module.exports.notiMessage = (message) => {
   };
 };
 
+module.exports.scrollToBottomById = (id) => {
+  const ele = document.getElementById(id);
+  ele.scrollTop = ele.scrollHeight;
+};
+
 module.exports.collectGarbage = () => {
   URL.revokeObjectURL(URL.createObjectURL(new Blob([1])));
 };
 
-module.exports.getURL = () => {
+const getURL = () => {
   return "http://localhost:3000";
 };
+module.exports.getURL = getURL;
 
+module.exports.getImg = (src) => {
+  return `${getURL()}/${src}`;
+};
+
+module.exports.getPrivateChannelName = (participants) => {
+  const currentUser = store.getState().user;
+  const targetId =
+    participants[0] == currentUser._id ? participants[1] : participants[0];
+  const target = currentUser.friends.find((ele) => ele.user._id == targetId);
+  return target ? target.user.name : "Cuộc trò chuyện";
+};

@@ -1,4 +1,5 @@
 const redux = require("redux");
+const _ = require("lodash");
 
 let defaultData = {
   name: "DefaultName",
@@ -10,12 +11,21 @@ let defaultData = {
 
 const defaultState = {
   user: {
-    name: defaultData.name,
-    ip: null,
-    port: null,
-    socketID: null,
+    //...
+    channels: [],
+    notification: [],
   },
-  clients: {
+  view: {
+    menu: "converstation", // converstation, list-friend
+    content: "default", // id channel
+    searchModal: false,
+  },
+
+  channels: {
+    list: [],
+    currentHistory: [],
+  },
+  notifications: {
     list: [],
   },
   privateConnection: {
@@ -29,6 +39,7 @@ const defaultState = {
     historyLog: [], // message data {text, time, user}
   },
   status: {
+    loadHistory: false,
     toServer: false,
     toPeer: false,
     checkingNAT: false,
@@ -46,20 +57,18 @@ const defaultState = {
 };
 const userReducer = (state = {}, action) => {
   switch (action.type) {
-    case "CHANGE_NAME":
-      if (window.electron) {
-        window.electron.setDefaultData({
-          name: action.data,
-        });
-      }
-      return Object.assign({}, state, {
-        name: action.data,
+    case "STORE_INFO":
+      return Object.assign({}, state, action.data);
+    case "STORE_FRIENDS":
+      return Object.assign({}, state, { friends: action.data });
+
+    case "LOAD_NOTIFICATION":
+      const result = action.data.map((noti) => {
+        return { detail: noti.detail._id, isSeen: noti.isSeen };
       });
-    case "UPDATE_IP":
-      return Object.assign({}, state, {
-        ip: action.data.ip.replace("::ffff:", ""),
-        port: action.data.port,
-      });
+      return Object.assign({}, state, { notification: result });
+    case "UPDATE_LASTEST_CHANNEL_LIST":
+      return Object.assign({}, state, { channels: action.data });
     case "DISCONNECT_FROM_SERVER":
       return Object.assign({}, state, {
         ip: null,
@@ -74,17 +83,80 @@ const userReducer = (state = {}, action) => {
       return state;
   }
 };
-
-const clientsReducer = (state = {}, action) => {
+const viewReducer = (state = {}, action) => {
   switch (action.type) {
-    case "UPDATE_CLIENTS_LIST":
+    case "STORE_CHANNELS":
+      const content = action.data[0] ? action.data[0]._id : "default";
+      return Object.assign({}, state, {
+        content,
+      });
+    case "CHANGE_MENU":
+      return Object.assign({}, state, {
+        menu: action.data,
+      });
+    case "CHANGE_CHANNEL":
+      return Object.assign({}, state, {
+        content: action.data,
+      });
+    case "TOGGLE_SEARCH_MODAL":
+      return Object.assign({}, state, {
+        searchModal: action.data,
+      });
+    default:
+      return state;
+  }
+};
+const channelsReducer = (state = {}, action) => {
+  switch (action.type) {
+    case "LOAD_CURRENT_HISTORY":
+      const messages = state.list.find(
+        (ele) => ele._id == action.data
+      ).messages;
+      return Object.assign({}, state, {
+        currentHistory: messages,
+      });
+    case "STORE_CHANNELS":
       return Object.assign({}, state, {
         list: action.data,
       });
-    case "DISCONNECT_FROM_SERVER":
-      return Object.assign({}, state, {
-        list: [],
+    case "UPDATE_MESSAGE":
+      const channel = state.list.find(
+        (ele) => ele._id == action.data.channelId
+      );
+      channel.messages.push(...action.data.messages);
+      const result = _.uniqBy(channel.messages, (message) => {
+        return message.time;
       });
+      result.sort((a, b) => {
+        if (a.time > b.time) {
+          return -1;
+        }
+        return 1;
+      });
+
+      return Object.assign({}, state, {
+        currentHistory: result,
+      });
+    default:
+      return state;
+  }
+};
+const notificationsReducer = (state = {}, action) => {
+  switch (action.type) {
+    case "LOAD_NOTIFICATION":
+      const notis = state.list ? state.list.slice() : [];
+      notis.push(...action.data);
+      const result = _.uniqBy(notis, (noti) => {
+        return noti.detail._id;
+      });
+      result.sort((a, b) => {
+        if (a.detail.time > b.detail.time) {
+          return -1;
+        }
+        return 1;
+      });
+      return Object.assign({}, state, { list: result });
+
     default:
       return state;
   }
@@ -152,6 +224,10 @@ const privateConnectionReducer = (state = {}, action) => {
 };
 const statusReducer = (state = {}, action) => {
   switch (action.type) {
+    case "SET_LOAD_HISTORY":
+      return Object.assign({}, state, {
+        loadHistory: action.data,
+      });
     case "CHECKING_NAT":
       return Object.assign({}, state, {
         checkingNAT: action.data,
@@ -235,7 +311,9 @@ const webRTCReducer = (state = {}, action) => {
 
 const combinedReducer = redux.combineReducers({
   user: userReducer,
-  clients: clientsReducer,
+  view: viewReducer,
+  channels: channelsReducer,
+  notifications: notificationsReducer,
   status: statusReducer,
   privateConnection: privateConnectionReducer,
   fileManager: fileManagerReducer,

@@ -4,30 +4,33 @@ const store = require("../../redux/store");
 const { getPublicIP } = require("../services/client.service");
 const helper = require("../../helper");
 const webRTC = require("../services/webrtc.service");
+const ChannelServices = require("./channel.service");
+const UserServices = require("./user.service");
 
 let socket;
 
-module.exports.connect = function () {
-  socket = io("https://file-transfers.herokuapp.com/");
-  // socket = io("http://localhost:3000");
+module.exports.connect = function (id) {
+  // socket = io("https://file-transfers.herokuapp.com/");
+  socket = io(helper.getURL());
   socket.on("connect", () => {
-    getPublicIP()
-      .then((res) => {
-        store.dispatch({ type: "UPDATE_IP", data: res.data });
-        store.dispatch({ type: "UPDATE_SOCKETID", data: socket.id });
-        store.dispatch({
-          type: "CONNECT_TO_SERVER",
-          data: helper.notiMessage("Connected to server"),
-        });
-        socket.emit("data-from-client", store.getState().user);
-      })
-      .catch((err) => console.log(err));
+    socket.emit("init-connection", store.getState().user._id);
   });
   socket.on("update-clients-list", (clients) => {
     if (clients) {
       store.dispatch({ type: "UPDATE_CLIENTS_LIST", data: clients });
     }
   });
+  socket.on("have-new-message", (options) => {
+    ChannelServices.updateMessage(options.channelId);
+  });
+  socket.on("have-new-friends", (options) => {
+    UserServices.getFriends();
+  });
+  socket.on("have-new-notification", (options) => {
+    console.log("have-new-notification");
+    UserServices.getNotifications(options.channelId);
+  });
+
   socket.on("disconnect", (reason) => {
     console.log(reason);
     store.dispatch({
