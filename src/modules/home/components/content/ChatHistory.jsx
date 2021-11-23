@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { connect } from "react-redux";
+import _ from "lodash";
 
 import ChatMessage from "./ChatMessage.jsx";
 import helper from "../../../helper";
@@ -8,6 +9,16 @@ import ChannelCard from "./channel-card.jsx";
 
 function ChatHistory(props) {
   const [isTop, setIsTop] = useState(false);
+  const usersMap = useMemo(() => {
+    if (!_.get(props, "channel.detailParticipants")) {
+      return {};
+    }
+    const mapObj = {};
+    props.channel.detailParticipants.forEach((participant) => {
+      mapObj[participant._id] = participant;
+    });
+    return mapObj;
+  }, [props.channel, props.channelList]);
   const view = useMemo(() => {
     let last = {};
     return props.messages.map((v, i) => {
@@ -31,9 +42,15 @@ function ChatHistory(props) {
         v.space = false;
       }
       last = v;
-      return <ChatMessage key={i} messageInfo={v} />;
+      return (
+        <ChatMessage
+          key={i}
+          memberInfo={props.channel.type == "group" ? usersMap[v.sendBy] : {}}
+          messageInfo={v}
+        />
+      );
     });
-  }, [props.messages]);
+  }, [props.messages, props.channelList]);
   useEffect(() => {
     helper.scrollToBottomById("chat-history");
     props.setLoadHistory(false);
@@ -70,6 +87,7 @@ const ChatHistorySTP = (state) => {
     status: state.status,
     view: state.view,
     messages: state.channels.currentHistory,
+    channelList: state.channels.list,
   };
 };
 

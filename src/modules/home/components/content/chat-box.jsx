@@ -1,32 +1,54 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button } from "react-bootstrap";
+import { Button, Modal } from "react-bootstrap";
 import { connect } from "react-redux";
 import _ from "lodash";
 
 import Avatar from "../common/avatar.jsx";
 import ChatHistory from "./ChatHistory.jsx";
 import ChatInfo from "./chat-info.jsx";
+import ModalProfile from "../common/modal-profile.jsx";
+import Profile from "../common/profile.jsx";
 import ChannelServices from "../../services/channel.service";
-import helper from "../../../helper";
 
 function ChatBox(props) {
   const [text, setText] = useState("");
   const [isFocusTyping, setIsFocusTyping] = useState(false);
   const [canvas, setCanvas] = useState(false);
 
+  const [myProfileModal, setMyProfileModal] = useState(false);
+  const showMyProfileModal = () => {
+    setMyProfileModal(true);
+  };
+  const closeMyProfileModal = () => {
+    setMyProfileModal(false);
+  };
   useEffect(() => {
     if (props.channel) {
+      if (
+        !props.channel.detailParticipants &&
+        props.channel.type != "private"
+      ) {
+        ChannelServices.getMembers(props.channel._id);
+      }
       props.loadCurrentHisory(props.channel._id);
       if (_.get(props, "channel.messages.length") < 2) {
-        ChannelServices.updateMessage(props.channel._id);
+        ChannelServices.loadOlderHistory(props.channel._id);
       }
     }
   }, [props.channel]);
-  const title = useMemo(() => {
-    return props.channel.type == "private"
-      ? helper.getPrivateChannelName(props.channel.participants)
-      : props.channel.title;
-  }, [props.channel]);
+  const friendInfo = useMemo(() => {
+    if (props.channel.type == "private") {
+      const friend = props.user.friends.find((friendMap) => {
+        return friendMap.channel == props.channel._id;
+      });
+      if (!friend) {
+        return null;
+      }
+      return friend.user;
+    }
+    return {};
+  }, [props.view.content]);
+
   const turnOnCanvas = () => {
     setCanvas(true);
   };
@@ -55,6 +77,7 @@ function ChatBox(props) {
       type: "text",
     };
     ChannelServices.sendMessage(props.channel._id, message);
+    document.getElementById('chat-input').style.height = "auto";
     setText("");
   };
   const handleSendByEnter = (e) => {
@@ -70,18 +93,45 @@ function ChatBox(props) {
         style={{ height: "100%", position: "relative" }}
       >
         <div className="content-header d-flex p-2 justify-content-between bg-light align-items-center border-bottom">
-          <div className="d-flex">
+          <div
+            className="d-flex"
+            style={props.channel.type == "private" ? { cursor: "pointer" } : {}}
+            onClick={
+              props.channel.type == "private" ? showMyProfileModal : null
+            }
+          >
             <Avatar src="../../../mushroom.png" width="50" height="50" />
             <div>
-              <p className="fs-5 fw-bold">{title}</p>
+              <p className="fs-5 fw-bold">
+                {props.channel.type == "private"
+                  ? friendInfo.name
+                  : props.channel.title}
+              </p>
               <p style={{ fontSize: "0.95rem", color: "gray" }}>
                 Truy cap last time
               </p>
             </div>
           </div>
           <div className="d-flex">
-            <i className="text-btn fas fa-phone-alt"></i>
-            <i className="text-btn fas fa-video"></i>
+            {props.channel.type == "private" ? (
+              <>
+                <i
+                  title="Gọi điện"
+                  className="text-btn text-primary fas fa-phone-alt"
+                ></i>
+                <i
+                  title="Call video"
+                  className="text-btn text-primary fas fa-video"
+                ></i>
+              </>
+            ) : (
+              <>
+                <i
+                  title="Thêm thành viên"
+                  className="text-btn fas fa-user-plus"
+                ></i>
+              </>
+            )}
             <i
               className="text-btn far fa-window-maximize"
               style={{ transform: "rotate(-90deg)" }}
@@ -90,6 +140,7 @@ function ChatBox(props) {
           </div>
           <ChatInfo
             channel={props.channel}
+            userInfo={friendInfo}
             canvas={canvas}
             turnOn={turnOnCanvas}
             turnOff={turnOffCanvas}
@@ -128,6 +179,20 @@ function ChatBox(props) {
           </div>
         </div>
       </div>
+      {props.channel.type == "private" && (
+        <ModalProfile
+          show={myProfileModal}
+          handleClose={closeMyProfileModal}
+          title="Thông tin"
+        >
+          <Profile
+            friend
+            target={friendInfo}
+            channelId={props.channel._id}
+            handleClose={closeMyProfileModal}
+          />
+        </ModalProfile>
+      )}
     </>
   );
 }

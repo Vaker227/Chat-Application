@@ -21,6 +21,12 @@ module.exports.findUsers = (name) => {
   });
 };
 
+module.exports.removeFriend = (friendId, channelId) => {
+  return axios.post(helper.getURL() + "/api/user/remove-friend", {
+    friendId,
+    channelId,
+  });
+};
 module.exports.requestFriend = (userId) => {
   return axios.post(helper.getURL() + "/api/user/request-friend", { userId });
 };
@@ -33,7 +39,7 @@ module.exports.responseFriendRequest = (isAccept, request) => {
       request,
     })
     .then((res) => {
-      getLastestChannelList.then(() => {
+      getLastestChannelList().then(() => {
         getChannels();
       });
     });

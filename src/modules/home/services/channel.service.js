@@ -10,16 +10,30 @@ const getLastestChannelList = () => {
     });
 };
 module.exports.getLastestChannelList = getLastestChannelList;
+
 const getChannels = () => {
-  const channels = store.getState().user.channels;
-  return axios
-    .post(helper.getURL() + "/api/channel/get", channels)
-    .then((res) => {
-      const channels = res.data;
-      store.dispatch({ type: "STORE_CHANNELS", data: channels });
-    });
+  return axios.post(helper.getURL() + "/api/channel/get").then((res) => {
+    const channels = res.data;
+    console.log(channels);
+    store.dispatch({ type: "STORE_CHANNELS", data: channels });
+  });
 };
 module.exports.getChannels = getChannels;
+
+module.exports.getMembers = (channelId) => {
+  return axios
+    .get(helper.getURL() + "/api/channel/get-members", {
+      params: {
+        channelId,
+      },
+    })
+    .then((res) => {
+      store.dispatch({
+        type: "STORE_MEMBERS",
+        data: { channelId: channelId, participants: res.data },
+      });
+    });
+};
 
 module.exports.createGroup = (info) => {
   return axios
@@ -41,25 +55,33 @@ module.exports.updateMessage = (channelId) => {
   axios
     .post(helper.getURL() + `/api/channel/update-message`, { channelId })
     .then((res) => {
+      const andCurrent =
+        store.getState().view.content == channelId ? true : false;
       store.dispatch({
         type: "UPDATE_MESSAGE",
-        data: { channelId, messages: res.data },
+        data: { channelId, messages: res.data, andCurrent },
       });
     });
 };
 
 module.exports.loadOlderHistory = (channelId, time) => {
+  const timeRoot = time || new Date();
   return axios
-    .post(helper.getURL() + `/api/channel/load-history`, { channelId, time })
+    .post(helper.getURL() + `/api/channel/load-history`, {
+      channelId,
+      time: timeRoot,
+    })
     .then((res) => {
-      if (!res.data.length) {
+      if (!res.data.length || res.data.length < 10) {
+        const newMessages = [...res.data] || [];
+        console.log(newMessages);
         store.dispatch({
-          type: "UPDATE_MESSAGE",
-          data: { channelId, messages: [{ content: "top" }] },
+          type: "LOAD_OLD_MESSAGE",
+          data: { channelId, messages: [...newMessages, { content: "top" }] },
         });
       } else {
         store.dispatch({
-          type: "UPDATE_MESSAGE",
+          type: "LOAD_OLD_MESSAGE",
           data: { channelId, messages: res.data },
         });
         store.dispatch({

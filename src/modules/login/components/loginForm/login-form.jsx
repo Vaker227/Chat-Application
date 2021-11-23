@@ -7,17 +7,21 @@ function LoginForm() {
   const [validated, setValidated] = useState(false);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [loginInfo, setLoginInfo] = useState("");
   const handleUsernameChange = (e) => {
     setUsername(e.target.value);
+    setLoginInfo("");
   };
   const handlePasswordChange = (e) => {
     setPassword(e.target.value);
+    setLoginInfo("");
   };
-  const handleInfo = () => {
-    UserService.getInfo().then((res) => {
-      console.log(res);
-    });
+  const handleKeyDown = (e) => {
+    if (e.key == "Enter") {
+      handleLogin();
+    }
   };
+
   const handleLogin = (e) => {
     if (!username || !password) {
       setValidated(true);
@@ -28,7 +32,8 @@ function LoginForm() {
         window.electron.login();
       })
       .catch((err) => {
-        console.log(err.response);
+        console.log(err.response.messesage);
+        setLoginInfo(err.response.data.message);
       });
   };
   return (
@@ -39,6 +44,7 @@ function LoginForm() {
           type="text"
           value={username}
           onChange={handleUsernameChange}
+          onKeyDown={handleKeyDown}
           placeholder="Username"
           required
         />
@@ -52,12 +58,20 @@ function LoginForm() {
           type="password"
           value={password}
           onChange={handlePasswordChange}
+          onKeyDown={handleKeyDown}
           placeholder="********"
           required
         />
         <Form.Control.Feedback type="invalid">
           Điền mật khẩu
         </Form.Control.Feedback>
+        {loginInfo ? (
+          <p className="text-danger fw-light fst-italic px-3 py-1">
+            {loginInfo}
+          </p>
+        ) : (
+          ""
+        )}
       </Form.Group>
       <Button className="d-block w-50 mx-auto" onClick={handleLogin}>
         Đăng nhập

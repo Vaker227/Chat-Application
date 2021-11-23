@@ -3,6 +3,7 @@ import { connect } from "react-redux";
 import { Accordion } from "react-bootstrap";
 
 import Contact from "./contact.jsx";
+import UserServices from "../../services/user.service";
 
 function ContactsList(props) {
   const friendList = useMemo(() => {
@@ -13,7 +14,10 @@ function ContactsList(props) {
         onClick={() => props.setChannel(friendMap.channel)}
       />
     ));
-  }, [props.friends]);
+  }, [props.friendMaps]);
+  const handleCollapse = () => {
+    UserServices.getFriends();
+  };
   return (
     <div className="menu-content mt-3 border-top">
       <div
@@ -35,9 +39,9 @@ function ContactsList(props) {
         />
       </div>
       <div>
-        <Accordion defaultActiveKey="0" flush>
+        <Accordion defaultActiveKey="0">
           <Accordion.Item eventKey="0">
-            <Accordion.Header>Bạn bè</Accordion.Header>
+            <Accordion.Header onClick={handleCollapse}>Bạn bè</Accordion.Header>
             <Accordion.Body className="p-0">{friendList}</Accordion.Body>
           </Accordion.Item>
         </Accordion>

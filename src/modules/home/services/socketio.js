@@ -23,8 +23,13 @@ module.exports.connect = function (id) {
   socket.on("have-new-message", (options) => {
     ChannelServices.updateMessage(options.channelId);
   });
-  socket.on("have-new-friends", (options) => {
+  socket.on("have-new-friends", () => {
+    console.log("have-new-friends");
     UserServices.getFriends();
+  });
+  socket.on("have-new-channels", () => {
+    console.log("have-new-channels");
+    ChannelServices.getChannels();
   });
   socket.on("have-new-notification", (options) => {
     console.log("have-new-notification");

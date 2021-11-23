@@ -19,7 +19,6 @@ function Profile(props) {
     if (changingName) {
       document.getElementById("change-name").focus();
     }
-    console.log(moment(props.target.dateOfBirth).format("YYYY-DD-MM"));
   }, [changingName]);
   // change value
   const handleChangeBirth = (e) => {
@@ -50,6 +49,11 @@ function Profile(props) {
   // handle click
   const handleUpdate = () => {
     UserServices.updateInfo({ name, dateOfBirth, gender }).then(() => {
+      props.handleClose();
+    });
+  };
+  const handleRemoveFriend = () => {
+    UserServices.removeFriend(props.target._id, props.channelId).then(() => {
       props.handleClose();
     });
   };
@@ -107,9 +111,15 @@ function Profile(props) {
           <div className="container-fluid profile-info-list mt-2">
             {props.friend ? (
               <>
-                <LineProfileInfo title="Giới tính">Nam</LineProfileInfo>
-                <LineProfileInfo title="Giới tính">Nam</LineProfileInfo>
-                <LineProfileInfo title="Giới tính">Nam</LineProfileInfo>
+                <LineProfileInfo title="Số bạn bè">
+                  {props.target.friends.length} người
+                </LineProfileInfo>
+                <LineProfileInfo title="Ngày sinh">
+                  {moment(props.target.dateOfBirth).format("DD / MM / YYYY")}
+                </LineProfileInfo>
+                <LineProfileInfo title="Giới tính">
+                  {props.target.gender == "male" ? "Nam" : "Nữ"}
+                </LineProfileInfo>
               </>
             ) : props.me ? (
               <>
@@ -150,7 +160,9 @@ function Profile(props) {
                 <LineProfileInfo title="Ngày sinh">
                   {moment(props.target.dateOfBirth).format("DD / MM / YYYY")}
                 </LineProfileInfo>
-                <LineProfileInfo title="Giới tính">Nam</LineProfileInfo>
+                <LineProfileInfo title="Giới tính">
+                  {props.target.gender == "male" ? "Nam" : "Nữ"}
+                </LineProfileInfo>
               </>
             )}
           </div>
@@ -162,16 +174,9 @@ function Profile(props) {
             <Button
               variant="white"
               className="profile-footer-items"
-              onClick={props.handleClose}
+              onClick={handleRemoveFriend}
             >
-              Close
-            </Button>
-            <Button
-              variant="white"
-              className="profile-footer-items"
-              onClick={props.handleClose}
-            >
-              Close
+              Xóa bạn
             </Button>
           </div>
         ) : props.me ? (

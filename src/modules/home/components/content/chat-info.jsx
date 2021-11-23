@@ -40,7 +40,9 @@ function ChatInfo(props) {
       <div className="p-3 d-flex flex-column align-items-center border-bottom border-4">
         <Avatar src="../../../mushroom.png" width="50" height="50" />
         <div>
-          <span className="fw-bold fs-4">{props.channel.title}</span>
+          <span className="fw-bold fs-4">
+            {props.channel.title || props.userInfo.name}
+          </span>
           <i
             className="text-btn far fa-edit ms-2"
             style={{ backgroundColor: "#0000000d" }}

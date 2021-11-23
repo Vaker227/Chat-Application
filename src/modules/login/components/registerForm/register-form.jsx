@@ -7,13 +7,24 @@ function RegisterForm() {
   const [name, setName] = useState("");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [registerInfo, setRegisterInfo] = useState("");
+
   const handleNameChange = (e) => {
+    if (registerInfo) {
+      setRegisterInfo();
+    }
     setName(e.target.value);
   };
   const handleUsernameChange = (e) => {
+    if (registerInfo) {
+      setRegisterInfo();
+    }
     setUsername(e.target.value);
   };
   const handlePasswordChange = (e) => {
+    if (registerInfo) {
+      setRegisterInfo();
+    }
     setPassword(e.target.value);
   };
   const handleRegister = () => {
@@ -21,9 +32,13 @@ function RegisterForm() {
       setValidated(true);
       return;
     }
-    UserService.register({ name, username, password }).then((res) => {
-      console.log(res);
-    });
+    UserService.register({ name, username, password })
+      .then((res) => {
+        setRegisterInfo("success");
+      })
+      .catch((err) => {
+        setRegisterInfo("error");
+      });
   };
   return (
     <Form noValidate validated={validated}>
@@ -68,6 +83,15 @@ function RegisterForm() {
         <Form.Control.Feedback type="invalid">
           Điền mật khẩu
         </Form.Control.Feedback>
+        {registerInfo ? (
+          registerInfo == "success" ? (
+            <p className="text-success px-3 py-1">Đăng ký thành công</p>
+          ) : (
+            <p className="text-danger px-3 py-1">Xảy ra lỗi !</p>
+          )
+        ) : (
+          ""
+        )}
       </Form.Group>
       <Button className="d-block w-50 mx-auto" onClick={handleRegister}>
         Đăng Ký

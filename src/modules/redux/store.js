@@ -115,16 +115,55 @@ const channelsReducer = (state = {}, action) => {
       return Object.assign({}, state, {
         currentHistory: messages,
       });
+    case "STORE_MEMBERS":
+      const newListMembers = state.list.slice().map((channel) => {
+        if (channel._id == action.data.channelId) {
+          channel.detailParticipants = action.data.participants;
+          return channel;
+        }
+        return channel;
+      });
+      return Object.assign({}, state, { list: newListMembers });
     case "STORE_CHANNELS":
       return Object.assign({}, state, {
         list: action.data,
       });
     case "UPDATE_MESSAGE":
-      const channel = state.list.find(
-        (ele) => ele._id == action.data.channelId
-      );
-      channel.messages.push(...action.data.messages);
-      const result = _.uniqBy(channel.messages, (message) => {
+      const newObj = {};
+      const newList = state.list.map((channel) => {
+        if (channel._id == action.data.channelId) {
+          channel.messages.unshift(...action.data.messages);
+          channel.messages = _.uniqBy(channel.messages, (message) => {
+            return message.time;
+          });
+          channel.messages.sort((a, b) => {
+            if (a.time > b.time) {
+              return -1;
+            }
+            return 1;
+          });
+        }
+        return channel;
+      });
+      newObj.list = newList;
+      if (action.data.andCurrent) {
+        const channelM = state.currentHistory.slice();
+        channelM.unshift(...action.data.messages);
+        newObj.currentHistory = _.uniqBy(channelM, (message) => {
+          return message.time;
+        });
+        newObj.currentHistory.sort((a, b) => {
+          if (a.time > b.time) {
+            return -1;
+          }
+          return 1;
+        });
+      }
+      return Object.assign({}, state, newObj);
+    case "LOAD_OLD_MESSAGE":
+      const channelM = state.currentHistory.slice();
+      channelM.push(...action.data.messages);
+      const result = _.uniqBy(channelM, (message) => {
         return message.time;
       });
       result.sort((a, b) => {
@@ -143,6 +182,11 @@ const channelsReducer = (state = {}, action) => {
 };
 const notificationsReducer = (state = {}, action) => {
   switch (action.type) {
+    case "REMOVE_NOTI":
+      const removedList = state.list.filter((noti) => {
+        return noti.detail._id != action.data;
+      });
+      return Object.assign({}, state, { list: removedList });
     case "LOAD_NOTIFICATION":
       const notis = state.list ? state.list.slice() : [];
       notis.push(...action.data);

@@ -4,13 +4,19 @@ import { Button } from "react-bootstrap";
 import Avatar from "../common/avatar.jsx";
 
 import UserServices from "../../services/user.service";
+import { connect } from "react-redux";
 
 function FriendRequest(props) {
+  console.log(props.request.detail._id);
   const handleAccept = () => {
-    UserServices.responseFriendRequest(true, props.request);
+    UserServices.responseFriendRequest(true, props.request).then(() => {
+      props.removeNoti(props.request.detail._id);
+    });
   };
   const handleReject = () => {
-    UserServices.responseFriendRequest(false, props.request);
+    UserServices.responseFriendRequest(false, props.request).then(() => {
+      props.removeNoti(props.request.detail._id);
+    });
   };
   return (
     <div className={`d-flex p-2 bg-light message`}>
@@ -45,4 +51,13 @@ function FriendRequest(props) {
   );
 }
 
-export default FriendRequest;
+const FriendRequestDTP = (dispatch) => {
+  return {
+    removeNoti: function (notiId) {
+      return dispatch({ type: "REMOVE_NOTI", data: notiId });
+    },
+  };
+};
+const FriendRequestReduxed = connect(null, FriendRequestDTP)(FriendRequest);
+
+export default FriendRequestReduxed;

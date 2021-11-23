@@ -1,5 +1,6 @@
-import React, { useState, useRef } from "react";
+import React from "react";
 import { OverlayTrigger, Tooltip } from "react-bootstrap";
+import _ from "lodash";
 
 import helper from "../../../helper.js";
 import Avatar from "../common/avatar.jsx";
@@ -22,13 +23,15 @@ function ChatMessage(props) {
             }
           >
             <div className="message-content bg-light p-2 shadow mx-2">
-              <p className="user-name fw-bold">{props.messageInfo.user}</p>
+              <p className="fs-7 fw-light pe-1">
+                {!props.messageInfo.me ? _.get(props, "memberInfo.name") : null}
+              </p>
               <p className="text-break">{props.messageInfo.content}</p>
             </div>
           </OverlayTrigger>
         </div>
       ) : props.messageInfo.type == "noti" ? (
-        <div className="mx-auto">
+        <div className="mx-auto my-4">
           <p className="text-center">
             {helper.getTimeFrom(props.messageInfo.time)}
           </p>

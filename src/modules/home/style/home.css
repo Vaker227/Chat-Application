@@ -181,7 +181,8 @@ body {
 .content-header {
 }
 #chat-history {
-  max-height: 70vh;
+  background-color: #dddedee6;
+  max-height: 80vh;
   overflow: overlay;
 }
 #chat-history:hover::-webkit-scrollbar-thumb {
@@ -267,6 +268,14 @@ body {
 .group-card:hover {
   transform: translateY(-5px);
   box-shadow: 0 4px 5px 0px #b8b8b8;
+}
+
+/* modified bootstrap */
+.fs-7 {
+  font-size: 0.9rem;
+}
+.fs-8 {
+  font-size: 0.7rem;
 }
 
 /* modified react-bootstrap*/

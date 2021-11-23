@@ -1,5 +1,4 @@
 import React, { useMemo } from "react";
-import { Container } from "react-bootstrap";
 import { connect } from "react-redux";
 
 import Message from "./message.jsx";

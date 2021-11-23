@@ -12,21 +12,18 @@ function Content({ className, ...props }) {
       (channel) => channel._id == props.view.content
     );
   }, [props.view.content]);
+  const listGroup = useMemo(() => {
+    return props.channels.list.filter((channel) => {
+      return channel.type == "group";
+    });
+  }, [props.channels.list]);
   return (
     <div id="content" className={className}>
       {currentChannel ? (
         <ChatBox channel={currentChannel} />
       ) : props.view.content == "group-list" ? (
         <ContentView title="Danh sách nhóm">
-          <GroupList
-            list={[
-              { title: "title1", participants: [1, 2, 3] },
-              { title: "title12", participants: [1, 3] },
-              { title: "title132", participants: [1, 3, 5, 6, 4, 54, 7] },
-              { title: "title132", participants: [1, 3, 5, 6, 4, 54, 7] },
-              { title: "title132", participants: [1, 3, 5, 6, 4, 54, 7] },
-            ]}
-          />
+          <GroupList list={listGroup} />
         </ContentView>
       ) : props.view.content == "noti-list" ? (
         <ContentView title="Thông báo">
