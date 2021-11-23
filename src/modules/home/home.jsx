@@ -12,7 +12,7 @@ import OverView from "./components/overview/overview.jsx";
 import SocketIO from "./services/socketio";
 
 function App() {
-  useEffect(() => {
+  const initInfo = () => {
     UserServices.getInfo().then((result) => {
       store.dispatch({ type: "STORE_INFO", data: result.data });
       SocketIO.connect(result.data._id);
@@ -20,10 +20,13 @@ function App() {
       UserServices.getFriends();
       UserServices.getNotifications();
     });
+  };
+  useEffect(() => {
+    initInfo();
   }, []);
   return (
     <div>
-      <OverView />
+      <OverView initInfo={initInfo} />
     </div>
   );
 }

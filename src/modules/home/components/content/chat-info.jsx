@@ -32,7 +32,7 @@ function ChatInfo(props) {
       show={props.canvas}
       onHide={props.turnOff}
       placement={"end"}
-      style={{ width: 300 }}
+      style={{ width: 300, marginTop: 30 }}
     >
       <div className="p-3 text-center fs-5 fw-bold border-bottom">
         Thông tin hội thoại

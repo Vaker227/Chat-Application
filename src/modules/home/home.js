@@ -12,6 +12,7 @@ module.exports = function (cookies) {
     height: 600,
     autoHideMenuBar: true,
     show: false,
+    frame: false,
     webPreferences: {
       preload: path.join(__dirname, "home.preload.js"),
     },
@@ -28,6 +29,12 @@ module.exports = function (cookies) {
   });
   ipcMain.on("quit-app", () => {
     app.quit();
+  });
+  ipcMain.on("minimize-app", () => {
+    win.minimize();
+  });
+  ipcMain.on("hide-app", () => {
+    win.hide();
   });
 
   return win;

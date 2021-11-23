@@ -41,7 +41,7 @@ function SearchModal(props) {
       size={isViewDetail ? "" : "sm"}
       show={props.isShow}
       onHide={props.turnOff}
-      dialogClassName={isViewDetail ? "profile" : ""}
+      dialogClassName={`${isViewDetail ? "profile" : ""}`}
     >
       <Modal.Header closeButton>
         <p

@@ -90,10 +90,40 @@ body {
   border: 2px solid white;
 }
 
+/* main-title*/
+#main-title {
+  margin-left: 60px;
+  padding-left: 10px;
+  position: relative;
+  z-index: 2000;
+  background-color: #f3f3f3;
+  height: 30px;
+  -webkit-app-region: drag;
+}
+#main-title > div {
+  -webkit-app-region: no-drag;
+}
+
+.title-button {
+  height: 100%;
+  padding: 2px 25px;
+  cursor: pointer;
+}
+.title-button:hover {
+  background-color: rgba(0, 0, 0, 0.2);
+}
+.title-button.quit-btn:hover {
+  color: white;
+  background-color: rgb(238, 46, 46);
+}
 /* main-layout */
 #main-layout {
   padding-left: 72px;
-  height: 100vh;
+  height: 96vh;
+}
+
+.back-drop-custom {
+  margin-top: 30px;
 }
 /* menu */
 #menu {
