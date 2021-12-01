@@ -39,19 +39,17 @@ function CallModal(props) {
         <div className="p-relative" style={{ height: "80vh" }}>
           {props.privateConnection.type == "vcall" ? (
             <>
-              <div
-                /* remote-video */ className="w-100 h-100"
-                style={{
-                  backgroundImage: "url('../../../mushroom.png')",
-                  filter: "blur(40px)",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                }}
-              >
+              <div /* remote-video */ className="w-100 h-100">
                 <video
                   id="remote-video"
                   className="w-100 h-100"
-                  style={{ objectFit: "cover" }}
+                  style={{
+                    backgroundImage: "url('../../../mushroom.png')",
+                    filter: "blur(40px)",
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                    objectFit: "cover",
+                  }}
                   autoPlay
                 ></video>
               </div>

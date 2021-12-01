@@ -114,7 +114,9 @@ function ChatBox(props) {
                   : props.channel.title}
               </p>
               <p style={{ fontSize: "0.95rem", color: "gray" }}>
-                Truy cap last time
+                {props.channel.type == "group"
+                  ? "Trò chuyện nhóm"
+                  : "Trò chuyện riêng"}
               </p>
             </div>
           </div>

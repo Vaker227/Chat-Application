@@ -92,3 +92,16 @@ module.exports.setLocalNoCamObj = (target) => {
   target.backgroundImage = "url(../../../nocam.png)";
   target.backgroundSize = "contain";
 };
+module.exports.setRemoteNoCamObj = (target, isHidden) => {
+  if (isHidden) {
+    target.backgroundImage = "url('../../../mushroom.png')";
+    target.filter = "blur(40px)";
+    target.backgroundSize = "cover";
+    target.backgroundPosition = "center";
+  } else {
+    target.backgroundImage = null;
+    target.filter = null;
+    target.backgroundSize = null;
+    target.backgroundPosition = null;
+  }
+};

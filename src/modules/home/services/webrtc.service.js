@@ -28,7 +28,7 @@ function resetAll() {
 
 function createPeerConnection() {
   const serverType = store.getState().webRTC.configType;
-  const type = store.getState().privateConnection.type;
+  const { type, video, mic } = store.getState().privateConnection;
   const localElement = document.getElementById(
     `local-${type == "vcall" ? "video" : "audio"}`
   );
@@ -43,13 +43,15 @@ function createPeerConnection() {
     .then(function (localStream) {
       window.localStream = localStream;
       localElement.srcObject = localStream;
-      localStream
-        .getTracks()
-        .forEach((track) => pc.addTrack(track, localStream));
-      if (type == "vcall") {
-        store.dispatch({ type: "TOGGLE_CALL_VIDEO", data: true });
-      }
-      store.dispatch({ type: "TOGGLE_CALL_MIC", data: true });
+      localStream.getTracks().forEach((track) => {
+        if (track.kind == "video") {
+          store.dispatch({ type: "TOGGLE_CALL_VIDEO", data: true });
+        }
+        if (track.kind == "audio") {
+          store.dispatch({ type: "TOGGLE_CALL_MIC", data: true });
+        }
+        pc.addTrack(track, localStream);
+      });
     })
     .catch((e) => {
       console.log(e);
@@ -82,13 +84,14 @@ function createPeerConnection() {
     const remoteElement = document.getElementById(
       `remote-${type == "vcall" ? "video" : "audio"}`
     );
-
     e.streams[0].onremovetrack = (e) => {
       if (e.track.kind == "video") {
-        remoteElement.srcObject = null;
-        remoteElement.removeAttribute("srcObject");
+        helper.setRemoteNoCamObj(remoteElement.style, true);
       }
     };
+    if (e.track.kind == "video") {
+      helper.setRemoteNoCamObj(remoteElement.style, false);
+    }
     remoteElement.srcObject = e.streams[0];
   };
 }
@@ -99,38 +102,15 @@ module.exports.startChannel = () => {
 };
 
 const toggleMic = (isOn) => {
-  const { type, video } = store.getState().privateConnection;
+  const { type } = store.getState().privateConnection;
 
   const localElement = document.getElementById(
     `local-${type == "vcall" ? "video" : "audio"}`
   );
   pc.getTransceivers().forEach((tran) => {
-    localElement.srcObject.getTracks().forEach((track) => track.stop());
-    tran.stop();
+    localElement.srcObject.getAudioTracks()[0].enabled = isOn;
   });
-  if (!video && !isOn) {
-    store.dispatch({ type: "TOGGLE_CALL_MIC", data: isOn });
-    return;
-  }
-  navigator.mediaDevices
-    .getUserMedia({
-      video: video ? { height: 480, width: 460 } : false,
-      audio: isOn,
-    })
-    .then(function (localStream) {
-      window.localStream = localStream;
-      localStream.getTracks().forEach((track) => {
-        pc.addTrack(track, localStream);
-      });
-      localElement.srcObject = localStream;
-      store.dispatch({ type: "TOGGLE_CALL_MIC", data: isOn });
-    })
-    .catch((e) => {
-      console.log(e);
-      if (type == "vcall") {
-        helper.setLocalNoCamObj(localElement.style);
-      }
-    });
+  store.dispatch({ type: "TOGGLE_CALL_MIC", data: isOn });
 };
 module.exports.toggleMic = toggleMic;
 
@@ -148,7 +128,7 @@ const toggleCamera = (isOn) => {
   navigator.mediaDevices
     .getUserMedia({
       video: isOn ? { height: 480, width: 460 } : false,
-      audio: true,
+      audio: mic,
     })
     .then(function (localStream) {
       window.localStream = localStream;
@@ -158,8 +138,10 @@ const toggleCamera = (isOn) => {
       localVideo.srcObject = localStream;
       store.dispatch({ type: "TOGGLE_CALL_VIDEO", data: isOn });
       if (!isOn) {
-        localVideo.srcObject = null;
-        localVideo.removeAttribute("srcObject");
+        // localVideo.srcObject = null;
+        // localVideo.removeAttribute("srcObject");
+        // localVideo.style.display = "none";
+
         helper.setLocalNoCamObj(localVideo.style);
       }
     })
