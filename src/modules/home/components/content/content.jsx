@@ -5,6 +5,8 @@ import ChatBox from "./chat-box.jsx";
 import ContentView from "./content-view.jsx";
 import GroupList from "./group-list.jsx";
 import NotiList from "./noti-list.jsx";
+import WebRTCModal from "./webrtc-modal.jsx";
+import CallModal from "./call-modal.jsx";
 
 function Content({ className, ...props }) {
   const currentChannel = useMemo(() => {
@@ -32,6 +34,9 @@ function Content({ className, ...props }) {
       ) : (
         <h1>Loading</h1>
       )}
+      {currentChannel && <WebRTCModal channel={currentChannel} />}
+      {props.isCalling && <CallModal />}
+      {/* <CallModal /> */}
     </div>
   );
 }
@@ -41,8 +46,10 @@ const ContentSTP = (state) => {
     channels: state.channels,
     view: state.view,
     notifications: state.notifications.list,
+    isCalling: state.privateConnection.isConnected,
   };
 };
+
 const ContentReduxed = connect(ContentSTP)(Content);
 
 export default ContentReduxed;

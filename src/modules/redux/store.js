@@ -19,6 +19,8 @@ const defaultState = {
     menu: "converstation", // converstation, list-friend
     content: "default", // id channel
     searchModal: false,
+    createReminderModal: false,
+    detailReminder: null, // reminder obj
   },
 
   channels: {
@@ -29,14 +31,14 @@ const defaultState = {
     list: [],
   },
   privateConnection: {
-    roomID: null,
-    targetID: null,
-    targetData: {},
     isReceivingRequest: false,
+    exchangingTarget: null,
     isRequesting: false,
     requestingTarget: null,
-    lastRequestResult: null,
-    historyLog: [], // message data {text, time, user}
+    type: "", // vcall, voice
+    isConnected: false,
+    video: false,
+    mic: false,
   },
   status: {
     loadHistory: false,
@@ -44,11 +46,6 @@ const defaultState = {
     toPeer: false,
     checkingNAT: false,
     natType: "checking", // normal, symmetric
-  },
-  fileManager: {
-    list: [], // file type {name, size, modified(milisecond),id ,
-    // origin ,state (waiting, downloading,stopped , reject, completed), percent(downloading) }
-    haveNoti: false,
   },
   webRTC: {
     status: "idle", //idle, new , checking, connected, completed , fail
@@ -102,6 +99,14 @@ const viewReducer = (state = {}, action) => {
       return Object.assign({}, state, {
         searchModal: action.data,
       });
+    case "TOGGLE_CREATE_REMINDER_MODAL":
+      return Object.assign({}, state, {
+        createReminderModal: action.data,
+      });
+    case "TOGGLE_DETAIL_REMINDER_MODAL":
+      return Object.assign({}, state, {
+        detailReminder: action.data,
+      });
     default:
       return state;
   }
@@ -115,15 +120,25 @@ const channelsReducer = (state = {}, action) => {
       return Object.assign({}, state, {
         currentHistory: messages,
       });
-    case "STORE_MEMBERS":
+    case "UPDATE_MEMBERS":
       const newListMembers = state.list.slice().map((channel) => {
+        if (channel._id == action.data.channelId) {
+          channel.participants = action.data.participants;
+          channel.detailParticipants = [];
+          return channel;
+        }
+        return channel;
+      });
+      return Object.assign({}, state, { list: newListMembers });
+    case "STORE_MEMBERS":
+      const newListDetailMembers = state.list.slice().map((channel) => {
         if (channel._id == action.data.channelId) {
           channel.detailParticipants = action.data.participants;
           return channel;
         }
         return channel;
       });
-      return Object.assign({}, state, { list: newListMembers });
+      return Object.assign({}, state, { list: newListDetailMembers });
     case "STORE_CHANNELS":
       return Object.assign({}, state, {
         list: action.data,
@@ -176,6 +191,10 @@ const channelsReducer = (state = {}, action) => {
       return Object.assign({}, state, {
         currentHistory: result,
       });
+    case "CLEAR_CURRENT_HISTORY":
+      return Object.assign({}, state, {
+        currentHistory: [],
+      });
     default:
       return state;
   }
@@ -211,56 +230,50 @@ const privateConnectionReducer = (state = {}, action) => {
     case "REQUESTING_PRIVATE_CONNECTION":
       return Object.assign({}, state, {
         isRequesting: true,
-        requestingTarget: action.data,
+        exchangingTarget: action.data.sendTo,
+        type: action.data.type,
       });
     case "END_REQUESTING_PRIVATE_CONNECTION":
-      return Object.assign({}, state, {
-        isRequesting: false,
-        requestingTarget: null,
-        lastRequestResult: action.data,
-      });
+      return Object.assign(
+        {},
+        state,
+        {
+          isRequesting: false,
+        },
+        action.data == "success"
+          ? { isConnected: true }
+          : { exchangingTarget: null, type: null }
+      );
     case "RECEIVING_REQUEST":
       return Object.assign({}, state, {
         isReceivingRequest: true,
-        targetID: action.data,
+        exchangingTarget: action.data.sendBy,
+        type: action.data.type,
       });
     case "END_RECEIVING_REQUEST":
-      return Object.assign({}, state, {
-        isReceivingRequest: false,
-        targetID: action.data ? state.targetID : null,
-      });
-    case "CONNECT_TO_SERVER":
-      return Object.assign({}, state, {
-        historyLog: [...state.historyLog, action.data],
-      });
-    case "DISCONNECT_FROM_SERVER":
-      return Object.assign({}, state, {
-        historyLog: [...state.historyLog, action.data],
-      });
-    case "CONNECT_PRIVATE_CONNECTION":
-      return Object.assign({}, state, {
-        roomID: action.data.roomID,
-        targetID: action.data.targetID,
-        historyLog: [...state.historyLog, action.data.message],
-      });
+      return Object.assign(
+        {},
+        state,
+        {
+          isReceivingRequest: false,
+        },
+        action.data == "accept"
+          ? { isConnected: true }
+          : { exchangingTarget: null, type: null }
+      );
     case "DISCONNECT_PRIVATE_CONNECTION":
-      const newHistoryLog = action.data
-        ? [...state.historyLog, action.data]
-        : [...state.historyLog];
       return Object.assign({}, state, {
-        roomID: null,
-        targetID: null,
-        targetData: null,
-        historyLog: newHistoryLog,
-        lastRequestResult: "online",
+        exchangingTarget: null,
+        type: null,
+        isConnected: false,
       });
-    case "UPDATE_TARGET_DATA":
+    case "TOGGLE_CALL_VIDEO":
       return Object.assign({}, state, {
-        targetData: action.data,
+        video: action.data,
       });
-    case "UPDATE_HISTORY_LOG":
+    case "TOGGLE_CALL_MIC":
       return Object.assign({}, state, {
-        historyLog: [...state.historyLog, action.data],
+        mic: action.data,
       });
     default:
       return state;
@@ -289,58 +302,11 @@ const statusReducer = (state = {}, action) => {
         toServer: false,
         toPeer: false,
       });
-    case "CONNECT_PRIVATE_CONNECTION":
-      return Object.assign({}, state, {
-        toPeer: true,
-      });
-    case "DISCONNECT_PRIVATE_CONNECTION":
-      return Object.assign({}, state, {
-        toPeer: false,
-      });
     default:
       return state;
   }
 };
 
-const fileManagerReducer = (state = {}, action) => {
-  switch (action.type) {
-    case "ADD_FILE_LIST":
-      return Object.assign({}, state, {
-        list: [...state.list, action.data],
-        haveNoti: true,
-      });
-    case "REMOVE_FILE_LIST":
-      const newListRemove = state.list.filter((file) => {
-        return file.id != action.data;
-      });
-      return Object.assign({}, state, { list: newListRemove, haveNoti: true });
-    case "UPDATE_STATE_FILE":
-      // action.data: {state(downloading, reject, completed) ,id}
-      const newListUpdate = state.list.map((fileInfo) => {
-        if (fileInfo.id == action.data.id) {
-          return Object.assign({}, fileInfo, {
-            state: action.data.state,
-            path: action.data.path,
-          });
-        }
-        return fileInfo;
-      });
-      return Object.assign({}, state, { list: newListUpdate, haveNoti: true });
-    case "UPDATE_DOWNLOAD_PROGRESS":
-      // action.data: {percent ,id}
-      const newListProgress = state.list.map((fileInfo) => {
-        if (fileInfo.id == action.data.id) {
-          return Object.assign({}, fileInfo, { percent: action.data.percent });
-        }
-        return fileInfo;
-      });
-      return Object.assign({}, state, { list: newListProgress });
-    case "REMOVE_NOTI":
-      return Object.assign({}, state, { haveNoti: false });
-    default:
-      return state;
-  }
-};
 const webRTCReducer = (state = {}, action) => {
   switch (action.type) {
     case "UPDATE_WEBRTC_STATUS":
@@ -360,7 +326,6 @@ const combinedReducer = redux.combineReducers({
   notifications: notificationsReducer,
   status: statusReducer,
   privateConnection: privateConnectionReducer,
-  fileManager: fileManagerReducer,
   webRTC: webRTCReducer,
 });
 const store = redux.createStore(

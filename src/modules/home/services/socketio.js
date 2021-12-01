@@ -20,20 +20,23 @@ module.exports.connect = function (id) {
       store.dispatch({ type: "UPDATE_CLIENTS_LIST", data: clients });
     }
   });
-  socket.on("have-new-message", (options) => {
+  socket.on("have-new-messages", (options) => {
     ChannelServices.updateMessage(options.channelId);
   });
   socket.on("have-new-friends", () => {
-    console.log("have-new-friends");
     UserServices.getFriends();
   });
   socket.on("have-new-channels", () => {
-    console.log("have-new-channels");
     ChannelServices.getChannels();
   });
+  socket.on("have-new-members", (options) => {
+    ChannelServices.getLastestMembers(options.channelId);
+  });
   socket.on("have-new-notification", (options) => {
-    console.log("have-new-notification");
     UserServices.getNotifications(options.channelId);
+  });
+  socket.on("refresh-chat-history", (channelId) => {
+    ChannelServices.refreshChatHistory(channelId);
   });
 
   socket.on("disconnect", (reason) => {
@@ -46,93 +49,30 @@ module.exports.connect = function (id) {
     webRTC.closeChannel();
   });
   // receiver
-  socket.on("request-private-connection", (requestedSocketID) => {
-    store.dispatch({ type: "RECEIVING_REQUEST", data: requestedSocketID });
+  socket.on("request-private-connection", (sendBy, type) => {
+    store.dispatch({ type: "RECEIVING_REQUEST", data: { sendBy, type } });
     receiveTimeoutHandle = setTimeout(() => {
-      store.dispatch({ type: "END_RECEIVING_REQUEST" });
+      store.dispatch({ type: "END_RECEIVING_REQUEST", data: "reject" });
     }, 6000);
   });
-  socket.on("target-leave-private-connection", () => {
-    store.dispatch({
-      type: "DISCONNECT_PRIVATE_CONNECTION",
-      data: helper.notiMessage("Connected user leaved room "),
-    });
+  // target end call
+  socket.on("close-private-connection", (targetData) => {
+    store.dispatch({ type: "DISCONNECT_PRIVATE_CONNECTION" });
     webRTC.closeChannel();
   });
-  // update target data
-  socket.on("update-target-user-data", (targetData) => {
-    store.dispatch({ type: "UPDATE_TARGET_DATA", data: targetData });
-  });
 
-  // message private connection
-  socket.on("private-send-message", (data) => {
-    // data :{text:..., time: ..., user:...}
-    if (data) {
-      store.dispatch({
-        type: "UPDATE_HISTORY_LOG",
-        data,
-      });
-    }
-  });
-  // exchange file
-  socket.on("private-exchange-file", (data) => {
-    if (data.type == "offer") {
-      store.dispatch({ type: "ADD_FILE_LIST", data: data.data });
-      return;
-    }
-    if (data.type == "reject") {
-      window.arrayFile = window.arrayFile.filter((file) => {
-        return file.id != data.data;
-      });
-      store.dispatch({
-        type: "UPDATE_STATE_FILE",
-        data: { state: "reject", id: data.data },
-      });
-      return;
-    }
-    if (data.type == "accept") {
-      const fileWillSend = window.arrayFile.find((file) => {
-        return file.id == data.data;
-      });
-      console.log(fileWillSend);
-      webRTC.startSendingFile(fileWillSend);
-      store.dispatch({
-        type: "UPDATE_STATE_FILE",
-        data: { state: "downloading", id: data.data },
-      });
-      return;
-    }
-  });
   // RTC data
   socket.on("signal-data", webRTC.handleChannel);
 };
 
 let receiveTimeoutHandle;
-module.exports.acceptPrivateConnection = (requestedSocketID) => {
-  // accept
+module.exports.responsePrivateConnection = (isAccept) => {
   clearTimeout(receiveTimeoutHandle);
-  socket.emit(
-    "response-private-connection",
-    requestedSocketID,
-    socket.id,
-    (response) => {
-      // response type: 'accept: ${}'
-      const roomID = response.split(" ")[1];
-      store.dispatch({
-        type: "CONNECT_PRIVATE_CONNECTION",
-        data: {
-          roomID,
-          targetID: requestedSocketID,
-          message: helper.notiMessage("Connected to private room"),
-        },
-      });
-    }
-  );
-};
-module.exports.rejectPrivateConnection = () => {
-  // reject
-  clearTimeout(receiveTimeoutHandle);
-  socket.emit("response-private-connection");
+  socket.emit("response-private-connection", isAccept);
+  store.dispatch({
+    type: "END_RECEIVING_REQUEST",
+    data: isAccept ? "accept" : "reject",
+  });
 };
 
 module.exports.disconnect = function () {
@@ -143,91 +83,50 @@ module.exports.reconnect = function () {
 };
 
 // requester
-module.exports.connectPrivate = (targetSocketID) => {
-  if (socket.disconnected || targetSocketID == null) {
-    return;
-  }
+module.exports.connectPrivate = (type, target) => {
   store.dispatch({
     type: "REQUESTING_PRIVATE_CONNECTION",
-    data: targetSocketID,
+    data: { type, sendTo: target },
   });
-  socket.emit("request-private-connection", targetSocketID, (response) => {
-    // 4 type response : 'timeout' 'reject' 'accept: ${roomID}' 'already in connection: ${roomID}'
-    if (response == "timeout" || response == "reject" || response == "busy") {
+  const user = store.getState().user;
+  const userObj = {
+    _id: user._id,
+    name: user.name,
+    channelId: target.channelId,
+    startUser: target.startUser,
+  };
+  socket.emit(
+    "request-private-connection",
+    target.socket,
+    userObj,
+    type,
+    (response) => {
+      // 2 type response :  'reject', 'accept'
       store.dispatch({
         type: "END_REQUESTING_PRIVATE_CONNECTION",
-        data: response,
+        data: response == "accept" ? "success" : "reject",
       });
-      return;
+      if (response != "accept") {
+        return;
+      }
+      webRTC.startChannel();
     }
-    const roomID = response.split(": ")[1];
-    store.dispatch({
-      type: "END_REQUESTING_PRIVATE_CONNECTION",
-      data: "success",
-    });
-    store.dispatch({
-      type: "CONNECT_PRIVATE_CONNECTION",
-      data: {
-        roomID,
-        targetID: targetSocketID,
-        message: helper.notiMessage("Connected to private room"),
-      },
-    });
-    webRTC.startChannel();
+  );
+};
+module.exports.disconnectPrivate = (content) => {
+  const { exchangingTarget, type } = store.getState().privateConnection;
+  socket.emit("disconnect-private-connection", exchangingTarget, content, type);
+  store.dispatch({
+    type: "DISCONNECT_PRIVATE_CONNECTION",
   });
-};
-module.exports.disconnectPrivate = (roomID) => {
-  socket.emit("disconnect-room", roomID, (result) => {
-    if (result == "success") {
-      store.dispatch({
-        type: "DISCONNECT_PRIVATE_CONNECTION",
-        data: helper.notiMessage("Leaved private room"),
-      });
-      webRTC.closeChannel();
-    }
-  });
-};
-
-module.exports.sendMessage = (message, roomID) => {
-  if (!store.getState().status.toPeer) {
-    store.dispatch({
-      type: "UPDATE_HISTORY_LOG",
-      data: {
-        text: "Need connect to a client first!",
-        time: helper.getTime(),
-        user: "System",
-      },
-    });
-    return;
-  }
-  socket.emit(
-    "private-send-message",
-    { text: message, time: helper.getTime(), socketID: socket.id },
-    roomID
-  );
-};
-
-module.exports.exchangeFile = (data, roomID) => {
-  //data type fileInfo
-  socket.emit("private-exchange-file", { type: "offer", data }, roomID);
-};
-
-module.exports.acceptFile = (fileId) => {
-  socket.emit(
-    "private-exchange-file",
-    { type: "accept", data: fileId },
-    store.getState().privateConnection.roomID
-  );
-};
-module.exports.rejectFile = (fileId) => {
-  socket.emit(
-    "private-exchange-file",
-    { type: "reject", data: fileId },
-    store.getState().privateConnection.roomID
-  );
+  webRTC.closeChannel();
 };
 
 const sendRTCData = (data) => {
-  socket.emit("signal-data", data, store.getState().privateConnection.roomID);
+  socket.emit(
+    "signal-data",
+    data,
+    store.getState().privateConnection.exchangingTarget.socket
+  );
 };
 module.exports.sendRTCData = sendRTCData;

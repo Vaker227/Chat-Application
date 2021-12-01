@@ -1,6 +1,7 @@
 const axios = require("axios");
 const helper = require("../../helper");
 const store = require("../../redux/store");
+const { connectPrivate } = require("./socketio");
 
 const getLastestChannelList = () => {
   return axios
@@ -20,9 +21,9 @@ const getChannels = () => {
 };
 module.exports.getChannels = getChannels;
 
-module.exports.getMembers = (channelId) => {
+module.exports.getDetailMembers = (channelId) => {
   return axios
-    .get(helper.getURL() + "/api/channel/get-members", {
+    .get(helper.getURL() + "/api/channel/get-detail-members", {
       params: {
         channelId,
       },
@@ -30,6 +31,21 @@ module.exports.getMembers = (channelId) => {
     .then((res) => {
       store.dispatch({
         type: "STORE_MEMBERS",
+        data: { channelId: channelId, participants: res.data },
+      });
+    });
+};
+
+module.exports.getLastestMembers = (channelId) => {
+  return axios
+    .get(helper.getURL() + "/api/channel/get-lastest-members", {
+      params: {
+        channelId,
+      },
+    })
+    .then((res) => {
+      store.dispatch({
+        type: "UPDATE_MEMBERS",
         data: { channelId: channelId, participants: res.data },
       });
     });
@@ -43,12 +59,44 @@ module.exports.createGroup = (info) => {
       await getChannels();
     });
 };
+module.exports.addMembers = (info) => {
+  return axios.post(helper.getURL() + "/api/channel/add-members", info);
+};
+module.exports.removeMembers = (info) => {
+  return axios.post(helper.getURL() + "/api/channel/remove-members", info);
+};
 
 module.exports.sendMessage = (channelId, message) => {
   axios.post(helper.getURL() + `/api/channel/send-message`, {
     channelId,
     message,
   });
+};
+
+module.exports.createReminder = (channelId, due, content) => {
+  return axios.post(helper.getURL() + `/api/channel/create-reminder`, {
+    due,
+    content,
+    channelId,
+  });
+};
+module.exports.checkCallTarget = (targetId, channelId, type) => {
+  return axios
+    .post(helper.getURL() + `/api/channel/check-call-target`, {
+      targetId,
+      channelId,
+      type,
+    })
+    .then((response) => {
+      if (response.data.error) {
+        console.log(response.error);
+        return;
+      }
+      if (response.data.success) {
+        const { target } = response.data;
+        connectPrivate(type, target);
+      }
+    });
 };
 
 module.exports.updateMessage = (channelId) => {
@@ -64,7 +112,7 @@ module.exports.updateMessage = (channelId) => {
     });
 };
 
-module.exports.loadOlderHistory = (channelId, time) => {
+const loadOlderHistory = (channelId, time) => {
   const timeRoot = time || new Date();
   return axios
     .post(helper.getURL() + `/api/channel/load-history`, {
@@ -74,7 +122,6 @@ module.exports.loadOlderHistory = (channelId, time) => {
     .then((res) => {
       if (!res.data.length || res.data.length < 10) {
         const newMessages = [...res.data] || [];
-        console.log(newMessages);
         store.dispatch({
           type: "LOAD_OLD_MESSAGE",
           data: { channelId, messages: [...newMessages, { content: "top" }] },
@@ -90,4 +137,13 @@ module.exports.loadOlderHistory = (channelId, time) => {
         });
       }
     });
+};
+module.exports.loadOlderHistory = loadOlderHistory;
+
+module.exports.refreshChatHistory = (channelId) => {
+  const currentContent = store.getState().view.content;
+  if (currentContent == channelId) {
+    store.dispatch({ type: "CLEAR_CURRENT_HISTORY" });
+    loadOlderHistory(channelId, new Date());
+  }
 };

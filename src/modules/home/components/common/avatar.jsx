@@ -4,7 +4,7 @@ import { Image } from "react-bootstrap";
 function Avatar({ src, className, width, height }) {
   return (
     <div
-      className={`${className}`}
+      className={` ${className}`}
       style={{
         width: `${width}px`,
         height: `${height}px`,

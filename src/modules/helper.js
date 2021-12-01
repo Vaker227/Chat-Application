@@ -75,3 +75,20 @@ module.exports.getPrivateChannelName = (participants) => {
   const target = currentUser.friends.find((ele) => ele.user._id == targetId);
   return target ? target.user.name : "Cuộc trò chuyện";
 };
+
+module.exports.checkOutdated = (time) => {
+  const now = new Date();
+  const target = new Date(time);
+  if (now.getTime() >= target.getTime()) {
+    return true;
+  }
+  return false;
+};
+
+module.exports.setLocalNoCamObj = (target) => {
+  target.width = "180px";
+  target.height = "100%";
+  target.backgroundPosition = "center";
+  target.backgroundImage = "url(../../../nocam.png)";
+  target.backgroundSize = "contain";
+};

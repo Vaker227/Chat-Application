@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from "react";
-import { Stack, Button, Image } from "react-bootstrap";
+import React, { useEffect, useMemo, useState } from "react";
+import { Stack, OverlayTrigger, Popover } from "react-bootstrap";
 import { connect } from "react-redux";
 
 import Avatar from "../common/avatar.jsx";
@@ -8,13 +8,31 @@ import ModalProfile from "../common/modal-profile.jsx";
 import Profile from "../common/profile.jsx";
 import helper from "../../../helper";
 
+const settingOverlay = (props) => {
+  const handleLogout = () => {
+    if (window.electron) {
+      window.electron.logOut();
+    }
+  };
+  return (
+    <Popover {...props}>
+      <Popover.Body className="p-0">
+        <div>
+          <p className="setting-option" onClick={handleLogout}>
+            Đăng xuất
+          </p>
+        </div>
+      </Popover.Body>
+    </Popover>
+  );
+};
 function SideBar(props) {
+  const [myProfileModal, setMyProfileModal] = useState(false);
   useEffect(() => {
     window.getInfo = () => {
       UserService.getInfo().then((result) => console.log(result));
     };
   }, []);
-  const [myProfileModal, setMyProfileModal] = useState(false);
   const showMyProfileModal = () => {
     setMyProfileModal(true);
   };
@@ -58,9 +76,15 @@ function SideBar(props) {
         >
           <i className="far fa-address-book" title="Danh bạ"></i>
         </div>
-        <div className="sidebar-btn">
-          <i className="fas fa-cog"></i>
-        </div>
+        <OverlayTrigger
+          trigger="click"
+          placement="top-end"
+          overlay={settingOverlay}
+        >
+          <div className="sidebar-btn">
+            <i className="fas fa-cog"></i>
+          </div>
+        </OverlayTrigger>
       </Stack>
       <ModalProfile
         show={myProfileModal}

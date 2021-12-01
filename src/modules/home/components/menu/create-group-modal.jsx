@@ -3,7 +3,7 @@ import { Modal, Button } from "react-bootstrap";
 import { connect } from "react-redux";
 import _ from "lodash";
 
-import AddGroupUser from "./add-group-user.jsx";
+import GroupUser from "./group-user.jsx";
 import UserServices from "../../services/user.service";
 import ChannelServices from "../../services/channel.service";
 
@@ -43,7 +43,8 @@ function CreateGroupModal(props) {
       return <p>No friend yet!</p>;
     }
     return props.friendMaps.map((friendMap) => (
-      <AddGroupUser
+      <GroupUser
+      add
         isSelected={participants.includes(friendMap.user._id)}
         onSelect={handleSelect}
         user={friendMap.user}

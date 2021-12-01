@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Button, Modal } from "react-bootstrap";
+import { Button } from "react-bootstrap";
 import { connect } from "react-redux";
-import _ from "lodash";
 
 import Avatar from "../common/avatar.jsx";
 import ChatHistory from "./ChatHistory.jsx";
@@ -9,12 +8,15 @@ import ChatInfo from "./chat-info.jsx";
 import ModalProfile from "../common/modal-profile.jsx";
 import Profile from "../common/profile.jsx";
 import ChannelServices from "../../services/channel.service";
+import EditMembersModal from "./edit-members-modal.jsx";
+import CreateReminderModal from "./create-reminder-modal.jsx";
+import DetailReminderModal from "./detail-reminder-modal.jsx";
 
 function ChatBox(props) {
   const [text, setText] = useState("");
   const [isFocusTyping, setIsFocusTyping] = useState(false);
   const [canvas, setCanvas] = useState(false);
-
+  const [showAddMembersModal, setShowAddMembersModal] = useState(false);
   const [myProfileModal, setMyProfileModal] = useState(false);
   const showMyProfileModal = () => {
     setMyProfileModal(true);
@@ -28,9 +30,10 @@ function ChatBox(props) {
         !props.channel.detailParticipants &&
         props.channel.type != "private"
       ) {
-        ChannelServices.getMembers(props.channel._id);
+        ChannelServices.getDetailMembers(props.channel._id);
       }
       props.loadCurrentHisory(props.channel._id);
+      console.log(_.get(props, "channel.messages.length"));
       if (_.get(props, "channel.messages.length") < 2) {
         ChannelServices.loadOlderHistory(props.channel._id);
       }
@@ -77,7 +80,7 @@ function ChatBox(props) {
       type: "text",
     };
     ChannelServices.sendMessage(props.channel._id, message);
-    document.getElementById('chat-input').style.height = "auto";
+    document.getElementById("chat-input").style.height = "auto";
     setText("");
   };
   const handleSendByEnter = (e) => {
@@ -85,6 +88,9 @@ function ChatBox(props) {
       handleSendMessage(e);
       e.preventDefault();
     }
+  };
+  const handleCall = (type) => {
+    ChannelServices.checkCallTarget(friendInfo._id, props.channel._id, type);
   };
   return (
     <>
@@ -118,17 +124,20 @@ function ChatBox(props) {
                 <i
                   title="Gọi điện"
                   className="text-btn text-primary fas fa-phone-alt"
+                  onClick={() => handleCall("voice")}
                 ></i>
                 <i
                   title="Call video"
                   className="text-btn text-primary fas fa-video"
+                  onClick={() => handleCall("vcall")}
                 ></i>
               </>
             ) : (
               <>
                 <i
                   title="Thêm thành viên"
-                  className="text-btn fas fa-user-plus"
+                  className="text-btn text-primary fas fa-user-plus"
+                  onClick={() => setShowAddMembersModal(true)}
                 ></i>
               </>
             )}
@@ -139,6 +148,8 @@ function ChatBox(props) {
             ></i>
           </div>
           <ChatInfo
+            key={_.get(props, "channel.detailParticipants.length")}
+            showAddModal={() => setShowAddMembersModal(true)}
             channel={props.channel}
             userInfo={friendInfo}
             canvas={canvas}
@@ -148,7 +159,15 @@ function ChatBox(props) {
         </div>
         <ChatHistory channel={props.channel} />
         <div className="bg-light ">
-          <div className="w-100 p-2 ps-3">Thao tác</div>
+          <div className="d-flex p-2 ps-3">
+            <div
+              className="chat-action"
+              title="Tạo lời nhắc"
+              onClick={props.turnOnCreateReminderModal}
+            >
+              <i className="far fa-sticky-note"></i>
+            </div>
+          </div>
           <div
             className={`d-flex justify-content-between align-items-center p-2 w-100 ps-3  border-2 border-top ${
               isFocusTyping ? "border-primary" : ""
@@ -179,7 +198,7 @@ function ChatBox(props) {
           </div>
         </div>
       </div>
-      {props.channel.type == "private" && (
+      {props.channel.type == "private" ? (
         <ModalProfile
           show={myProfileModal}
           handleClose={closeMyProfileModal}
@@ -192,7 +211,16 @@ function ChatBox(props) {
             handleClose={closeMyProfileModal}
           />
         </ModalProfile>
+      ) : (
+        <EditMembersModal
+          add
+          channel={props.channel}
+          isShow={showAddMembersModal}
+          turnOff={() => setShowAddMembersModal(false)}
+        />
       )}
+      <CreateReminderModal channel={props.channel} />
+      <DetailReminderModal />
     </>
   );
 }
@@ -205,6 +233,15 @@ const ChatBoxDTP = (dispatch) => {
     loadCurrentHisory: function (channelId) {
       return dispatch({ type: "LOAD_CURRENT_HISTORY", data: channelId });
     },
+    turnOnCreateReminderModal: function () {
+      return dispatch({ type: "TOGGLE_CREATE_REMINDER_MODAL", data: true });
+    },
+    // sendingRequest: function (data) {
+    //   return dispatch({ type: "RECEIVING_REQUEST", data });
+    // },
+    // stopRequest: function (data) {
+    //   return dispatch({ type: "END_RECEIVING_REQUEST", data });
+    // },
   };
 };
 const ChatBoxReduxed = connect(ChatBoxSTP, ChatBoxDTP)(ChatBox);

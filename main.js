@@ -63,6 +63,12 @@ ipcMain.handle("login", async (event) => {
 ipcMain.on("close-login", () => {
   login.close();
 });
+
+ipcMain.on("logout", () => {
+  login = require("./src/modules/login/login")();
+  main.close();
+});
+
 ipcMain.handle("get-cookies", async (event, arg) => {
   const cookies = await event.sender.session.cookies.get(arg);
   return cookies;

@@ -16,7 +16,9 @@ function Message(props) {
   }, [props.view.content]);
   return (
     <div
-      className={`d-flex p-2 w-100 bg-light message ${isActive ? "active" : ""}`}
+      className={`d-flex p-2 w-100 bg-light message ${
+        isActive ? "active" : ""
+      }`}
       lasttime={`${
         props.channel.messages[0]
           ? helper.getTime(props.channel.messages[0].time)
@@ -32,10 +34,29 @@ function Message(props) {
           className="mx-auto"
         />
       </div>
-      <div style={{width:'80%'}}>
-        <p className={`title fs-5 text-truncate w-75 ${props.unread ? "fw-bold" : ""}`}>{title}</p>
-        <p className={`fs-6 text-truncate w-75 ${props.unread ? "fw-bold" : "fw-light"}`}>
-          {_.get(props, "channel.messages[0].content")}
+      <div style={{ width: "80%" }}>
+        <p
+          className={`title fs-5 text-truncate w-75 ${
+            props.unread ? "fw-bold" : ""
+          }`}
+        >
+          {title}
+        </p>
+        <p
+          className={`fs-6 text-truncate w-75 ${
+            props.unread ? "fw-bold" : "fw-light"
+          }`}
+        >
+          {_.get(props, "channel.messages[0].type") == "vcall" ||
+          _.get(props, "channel.messages[0].type") == "voice" ? (
+            _.get(props, "channel.messages[0].content") == "missed" ? (
+              "Bỏ lỡ cuộc gọi"
+            ) : (
+              "Cuộc gọi kết thúc "
+            )
+          ) : (
+            <>{_.get(props, "channel.messages[0].content")}</>
+          )}
         </p>
       </div>
     </div>

@@ -4,11 +4,14 @@ contextBridge.exposeInMainWorld("electron", {
   quitApp: () => {
     ipcRenderer.send("quit-app");
   },
-  minimizeApp:()=>{
+  minimizeApp: () => {
     ipcRenderer.send("minimize-app");
   },
-  hideApp:()=>{
+  hideApp: () => {
     ipcRenderer.send("hide-app");
+  },
+  logOut: () => {
+    ipcRenderer.send("logout");
   },
   getCookies: (arg) => {
     ipcRenderer.invoke("get-cookies", arg).then((cookies) => {

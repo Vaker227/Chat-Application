@@ -7,6 +7,10 @@ const { getLastestChannelList, getChannels } = require("./channel.service");
 module.exports.getInfo = () => {
   return axios.get(helper.getURL() + "/api/user/get-user-info");
 };
+module.exports.logOut = () => {
+  return axios.get(helper.getURL() + "/logout");
+};
+
 module.exports.updateInfo = (data) => {
   return axios
     .post(helper.getURL() + "/api/user/update-user-info", data)
